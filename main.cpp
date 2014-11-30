@@ -4,6 +4,7 @@
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
 using num_type = double;
@@ -53,10 +54,9 @@ int main(void)
 
 	for (unsigned i = 0; i < points.size(); ++i) {
 		::std::cout << points[i] << ::std::endl;
-		for (unsigned j = 0; j < dims; ++j) {
-			A(j,i) = points[i][j];
-		}
+		column(A, i) = points[i];
 	}
+	::std::cout << "A: " << A << ::std::endl;
 
 	static const num_type n = points.size();
 	static const scalar_vector e_over_n(n, 1.0 / n);
@@ -71,7 +71,6 @@ int main(void)
 		vector p_prime = prod(AD, e_over_n);
 
 		::std::cout << "d: " << d << ::std::endl;
-		::std::cout << "A: " << A << ::std::endl;
 		::std::cout << "D: " << D << ::std::endl;
 		::std::cout << "AD: " << AD << ::std::endl;
 		::std::cout << "p': " << p_prime << ::std::endl;
