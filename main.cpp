@@ -8,6 +8,7 @@
 
 using num_type = double;
 using vector = typename ::boost::numeric::ublas::vector<num_type>;
+using matrix = typename ::boost::numeric::ublas::matrix<num_type>;
 
 int main(void)
 {
@@ -15,11 +16,9 @@ int main(void)
 //	::std::cout << "Set number of dimensions: ";
 	::std::cin >> dims;
 
-	static const ::boost::numeric::ublas::zero_vector<num_type> zero_v(dims);
-	::std::list<vector> points;
-	vector v(dims);
+	::std::vector<vector> points;
 	do {
-		v.clear();
+		vector v(dims);
 		for (unsigned i = 0; i < dims; ++i) {
 			num_type tmp;
 			::std::cin >> tmp;
@@ -32,8 +31,14 @@ int main(void)
 			break;
 	} while (1);
 
-	for (const auto &v: points)
-		::std::cout << v << ::std::endl;
+	matrix A(dims, points.size());
 
+	for (unsigned i = 0; i < points.size(); ++i) {
+		::std::cout << points[i] << ::std::endl;
+		for (unsigned j = 0; j < dims; ++j) {
+			A(j,i) = points[i][j];
+		}
+	}
+	::std::cout << A << ::std::endl;
 	return 0;
 }
