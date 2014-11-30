@@ -1,3 +1,5 @@
+#include <cfloat>
+#include <cmath>
 #include <algorithm>
 #include <iostream>
 #include <list>
@@ -55,7 +57,44 @@ static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
 template<typename T>
 num_type find_minimum(const T& f, num_type low, num_type high)
 {
-	//TODO actually find minimum
+	while (1) {
+		assert(high >= low);
+		if (::std::nextafter(low, DBL_MAX) >= high)
+			return high;
+		// Or some other nice value
+		const num_type slice = (high - low) / 10;
+#if 0
+		::std::cout << "Finding minimum (slice = " << slice << ") in ("
+		            << low << ", " << high << "): (" << f(low) << ", "
+		            << f(high) << ")\n";
+#endif
+		num_type prev_res = f(low);
+		num_type it = low + slice;
+		while (prev_res > f(it) && it < high) {
+			prev_res = f(it);
+			it += slice;
+			assert(it <= high);
+		}
+		/* Now 'it' is the first increase sample. It can be: */
+		/* a) Right at the beginning,
+		 * the minimum is in the first slice */
+		if (it - slice <= low) {
+			high = it;
+			continue;
+		}
+		/* b) At the end, the minimum is in the last slice */
+		if (it + slice > high) {
+			low = it - slice;
+			continue;
+		}
+		/* c) Somewhere in the middle, the minimum is within
+		 * w slices of the previous value. */
+		low = it - 2 * slice;
+		high = it;
+		assert(f(it - slice) <= f(low));
+		assert(f(it - slice) <= f(high));
+
+	}
 	return (low + high) / 2;
 }
 
@@ -92,7 +131,7 @@ int main(void)
 	vector d = e_over_n;
 	unsigned it = 0;
 
-	{
+	while (it < 12) {
 		::std::cout << "\nIteration: " << it++ << ::std::endl;
 		/* Step 1 compute D, and p'.
 		 * Test if p' is close enough to origin.
@@ -146,6 +185,12 @@ int main(void)
 		/* Step 3: set new d */
 		d = f(a);
 		::std::cout << "d': " << d << ::std::endl;
+#if 0
+		::std::cout << "y(a): " << y(a) << ::std::endl;
+		::std::cout << "Dy(a): " << prod(D,y(a)) << ::std::endl;
+		::std::cout << "eTDy(a): " << multi_prod(scalar_vector(n, 1), D, y(a)) << ::std::endl;
+		::std::cout << "f(a): " << prod(D,y(a))/multi_prod(scalar_vector(n, 1), D, y(a)) << ::std::endl;
+#endif
 	}
 	return 0;
 }
