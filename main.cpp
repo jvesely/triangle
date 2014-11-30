@@ -10,6 +10,7 @@
 using num_type = double;
 using vector = typename ::boost::numeric::ublas::vector<num_type>;
 using scalar_vector = typename ::boost::numeric::ublas::scalar_vector<num_type>;
+using unit_vector = typename ::boost::numeric::ublas::unit_vector<num_type>;
 using matrix = typename ::boost::numeric::ublas::matrix<num_type>;
 
 template<typename T>
@@ -40,6 +41,22 @@ static int find_pivot(const matrix &AD, const vector &p_prime)
 			return i;
 	}
 	return -1;
+}
+
+static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
+{
+	vector tmp = prod(v, m);
+	matrix upgrade(1, tmp.size());
+	row(upgrade, 0) = tmp;
+	vector tmp2 = prod(upgrade, u);
+	return tmp2(0);
+}
+
+template<typename T>
+num_type find_minimum(const T& f, num_type low, num_type high)
+{
+	//TODO actually find minimum
+	return (low + high) / 2;
 }
 
 int main(void)
@@ -92,6 +109,8 @@ int main(void)
 			::std::cout << "Origin IS in the convex hull!\n";
 			return 0;
 		}
+		::std::cout << "p' distance form O: " << norm_2(p_prime)
+		            << ::std::endl;
 
 		/* Step 1.5: Find pivot (vertex closer to origin than p') */
 		const int pivot_index = find_pivot(AD, p_prime);
@@ -100,7 +119,33 @@ int main(void)
 			return 1;
 		}
 		vector pivot = column(AD, pivot_index);
-		::std::cout << "pivot: " << pivot << ::std::endl;
+		::std::cout << "pivot(" << pivot_index << "): " << pivot
+		            << ::std::endl;
+
+		/* Step 2: create distance function. */
+		const vector u = unit_vector(n, pivot_index) - e_over_n;
+		auto y = [&](num_type a){ return e_over_n + (u * a); };
+
+		::std::cout << "y(0): " << y(0) << ::std::endl;
+		::std::cout << "y(1): " << y(1) << ::std::endl;
+
+		auto f = [&](num_type a) -> vector {
+			return prod(D, y(a)) /
+			       multi_prod(scalar_vector(n, 1), D, y(a));
+		};
+		auto f_norm_sq = [&](num_type a) {
+			auto tmp = norm_2(prod(A, f(a)));
+			return tmp * tmp;
+		};
+
+		/* Step 2.5: find closest point. */
+		num_type a = find_minimum(f_norm_sq, 0.0, 1.0);
+		::std::cout << "Found a*: " << a << ::std::endl;
+		::std::cout << "Norm at a*: " << f_norm_sq(a) << ::std::endl;
+
+		/* Step 3: set new d */
+		d = f(a);
+		::std::cout << "d': " << d << ::std::endl;
 	}
 	return 0;
 }
