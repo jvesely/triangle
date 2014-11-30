@@ -63,6 +63,7 @@ int main(void)
 
 	matrix A(dims, points.size());
 
+	::std::cout << "Polytope points:\n";
 	for (unsigned i = 0; i < points.size(); ++i) {
 		::std::cout << points[i] << ::std::endl;
 		column(A, i) = points[i];
@@ -72,8 +73,10 @@ int main(void)
 	static const num_type n = points.size();
 	static const scalar_vector e_over_n(n, 1.0 / n);
 	vector d = e_over_n;
+	unsigned it = 0;
 
 	{
+		::std::cout << "\nIteration: " << it++ << ::std::endl;
 		/* Step 1 compute D, and p'.
 		 * Test if p' is close enough to origin.
 		 */
