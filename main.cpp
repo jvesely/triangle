@@ -31,6 +31,17 @@ static inline matrix diag(const vector &v)
 	return m;
 }
 
+static vector find_pivot(const matrix &AD, const vector &p_prime)
+{
+	for (unsigned i = 0; i < AD.size2(); ++i) {
+		const vector &candidate = column(AD, i);
+		::std::cout << "pivot candidate: " << candidate << ::std::endl;
+		if (norm_2(candidate) <= norm_2(candidate - p_prime))
+			return candidate;
+	}
+	return vector(AD.size1());
+}
+
 int main(void)
 {
 	unsigned dims = 0;
@@ -78,6 +89,14 @@ int main(void)
 			::std::cout << "Origin IS in the convex hull!\n";
 			return 0;
 		}
+
+		/* Step 1.5: Find pivot (vertex closer to origin than p') */
+		vector pivot = find_pivot(AD, p_prime);
+		if (is_zero(pivot)) {
+			::std::cout << "Origin IS NOT in the convex hull!\n";
+			return 1;
+		}
+		::std::cout << "pivot: " << pivot << ::std::endl;
 	}
 	return 0;
 }
