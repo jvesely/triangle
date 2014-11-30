@@ -21,6 +21,15 @@ bool is_zero<vector>(const vector &v)
 		              [](const num_type n){ return n != 0; });
 }
 
+static inline matrix diag(const vector &v)
+{
+	matrix m(v.size(), v.size());
+	m.clear();
+	for (unsigned i = 0; i < v.size(); ++i)
+		m(i,i) = v(i);
+	return m;
+}
+
 int main(void)
 {
 	unsigned dims = 0;
@@ -49,10 +58,27 @@ int main(void)
 		}
 	}
 
-	const num_type n = points.size();
-	vector d(scalar_vector(n, 1.0 / n));
+	static const num_type n = points.size();
+	static const scalar_vector e_over_n(n, 1.0 / n);
+	vector d = e_over_n;
 
-	::std::cout << A << ::std::endl;
-	::std::cout << d << ::std::endl;
+	{
+		/* Step 1 compute D, and p'.
+		 * Test if p' is close enough to origin.
+		 */
+		matrix D = diag(d) * n;
+		matrix AD = prod(A,  D);
+		vector p_prime = prod(AD, e_over_n);
+
+		::std::cout << "d: " << d << ::std::endl;
+		::std::cout << "A: " << A << ::std::endl;
+		::std::cout << "D: " << D << ::std::endl;
+		::std::cout << "AD: " << AD << ::std::endl;
+		::std::cout << "p': " << p_prime << ::std::endl;
+		if (is_zero(p_prime)) {
+			::std::cout << "Origin IS in the convex hull!\n";
+			return 0;
+		}
+	}
 	return 0;
 }
