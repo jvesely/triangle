@@ -64,13 +64,21 @@ static inline matrix diag(const vector &v)
 
 static int find_pivot(const matrix &AD, const vector &p_prime)
 {
+
+	double norm_diff = 0;
+	int index = -1;
 	for (unsigned i = 0; i < AD.size2(); ++i) {
 		const vector &candidate = column(AD, i);
-		::std::cout << "pivot candidate: " << candidate << ::std::endl;
-		if (norm_2(candidate) <= norm_2(candidate - p_prime))
-			return i;
+		const double diff =
+		    norm_2(candidate - p_prime) - norm_2(candidate);
+		::std::cout << "pivot candidate: " << candidate << "(" << diff
+		            << ")" << ::std::endl;
+		if (diff >= norm_diff) {
+			norm_diff = diff;
+			index = i;
+		}
 	}
-	return -1;
+	return index;
 }
 
 static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
