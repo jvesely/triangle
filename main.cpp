@@ -131,7 +131,8 @@ int main(void)
 	vector d = e_over_n;
 	unsigned it = 0;
 
-	while (it < 12) {
+	/* Keep limit as safeguard */
+	while (it < 1200) {
 		::std::cout << "\nIteration: " << it++ << ::std::endl;
 		/* Step 1 compute D, and p'.
 		 * Test if p' is close enough to origin.
@@ -183,8 +184,12 @@ int main(void)
 		::std::cout << "Norm at a*: " << f_norm_sq(a) << ::std::endl;
 
 		/* Step 3: set new d */
+		::std::cout << "d': " << f(a) << ::std::endl;
+		if (is_zero(vector(d - f(a)))) {
+			::std::cout << "Can't get new point, exiting\n";
+			break;
+		}
 		d = f(a);
-		::std::cout << "d': " << d << ::std::endl;
 #if 0
 		::std::cout << "y(a): " << y(a) << ::std::endl;
 		::std::cout << "Dy(a): " << prod(D,y(a)) << ::std::endl;
