@@ -15,5 +15,7 @@ Example invocation:
 Compiling:
 Makefile is included with standard targets (all, clean).
 The program need boost library and was developed against version 1.54 of this
-library. To compile the program just type:
+library. This program uses C++13 features and thus requires a fairly recent
+compiler (gcc, llvm has compile options issues).
+To compile the program just type:
 make
