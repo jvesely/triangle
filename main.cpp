@@ -222,6 +222,8 @@ int main(void)
 		::std::cout << "d': " << f(a) << ::std::endl;
 		if (is_zero(vector(d - f(a)))) {
 			::std::cout << "Can't get new point, exiting\n";
+			::std::cout << "We should be close enough to say "
+			            << "that origin IS in the convex hull\n";
 			break;
 		}
 		d = f(a);
