@@ -43,28 +43,42 @@ using scalar_vector = typename ::boost::numeric::ublas::scalar_vector<num_type>;
 using unit_vector = typename ::boost::numeric::ublas::unit_vector<num_type>;
 using matrix = typename ::boost::numeric::ublas::matrix<num_type>;
 
-template<typename T>
-bool is_zero(const T &);
 
-template<>
-bool is_zero<vector>(const vector &v)
+/** Check whether vector is all 0
+ * @param v Vector to check
+ * @retval True, if all elements in the vector are 0
+ *         False, otherwise.
+ */
+bool is_zero(const vector &v)
 {
 	return !::std::any_of(v.begin(), v.end(),
 		              [](const num_type n){ return n != 0; });
 }
 
+/** Function creates diagonal matrix from vector v
+ * @param v Vector to be put on diagonal
+ * @return Square matrix with elements of v on diagonal, other elements are 0.
+ */
 static inline matrix diag(const vector &v)
 {
 	matrix m(v.size(), v.size());
+	/* Constructor creates uninitialized matrix, we need to clear it */
 	m.clear();
 	for (unsigned i = 0; i < v.size(); ++i)
 		m(i,i) = v(i);
 	return m;
 }
 
+/** Look for vertices that are closer to O than p_prime.
+ * @param AD matrix, columns are vertices.
+ * @param p_prime reference point.
+ * @return index of column holding the vertex with greatest distance difference
+ *         >= 0
+ *         -1, if there is no vertex with distance to O greater or equal to
+ *         distance to p_prime.
+ */
 static int find_pivot(const matrix &AD, const vector &p_prime)
 {
-
 	double norm_diff = 0;
 	int index = -1;
 	for (unsigned i = 0; i < AD.size2(); ++i) {
@@ -81,6 +95,12 @@ static int find_pivot(const matrix &AD, const vector &p_prime)
 	return index;
 }
 
+/** Helper function to do vector * matrix * vector multiplication.
+ * @param v the first operand
+ * @param m the second operand
+ * @param u the third operand
+ * @return V x M x U
+ */
 static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
 {
 	vector tmp = prod(v, m);
@@ -90,6 +110,15 @@ static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
 	return tmp2(0);
 }
 
+/** Scan the range and find minimum
+ * @param f function, we use template to work around lack of lambda-function
+ *                    type
+ * @param low lower bound
+ * @param high upper bound
+ * @return Point that is closes to real point where @p f attains its minimum
+ *
+ * This function assumes that @p f is monotonic between bounds and min.
+ */
 template<typename T>
 num_type find_minimum(const T& f, num_type low, num_type high)
 {
