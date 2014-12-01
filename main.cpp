@@ -127,11 +127,10 @@ num_type find_minimum(const T& f, num_type low, num_type high)
 		 * w slices of the previous value. */
 		low = it - 2 * slice;
 		high = it;
-		assert(f(it - slice) <= f(low));
-		assert(f(it - slice) <= f(high));
+//		assert(f(it - slice) <= f(low));
+//		assert(f(it - slice) <= f(high));
 
 	}
-	return (low + high) / 2;
 }
 
 int main(void)
