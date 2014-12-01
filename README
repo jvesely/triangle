@@ -1,0 +1,19 @@
+This program is a course assignment for Linear Programming (CS521) class
+at Rutgers University, Fall '14.
+It implements Triangle algorithm for convex hull problem.
+
+The program expects input on standard input (or redirected from a file)
+The first value is number of dimensions - N. That is followed by N*X values
+representing vertices. The input ends with Origin (zero vector).
+Values only need to be separated by whitespace so feel free to align in any way.
+See test folder for examples.
+
+Example invocation:
+./triangle < test/square
+
+
+Compiling:
+Makefile is included with standard targets (all, clean).
+The program need boost library and was developed against version 1.54 of this
+library. To compile the program just type:
+make
