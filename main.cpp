@@ -42,8 +42,10 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 
-namespace boost_opt = boost::program_options;
+#include "boost/iostreams/stream.hpp"
+#include "boost/iostreams/device/null.hpp"
 
+namespace boost_opt = boost::program_options;
 
 using num_type = double;
 using vector = typename ::boost::numeric::ublas::vector<num_type>;
@@ -85,7 +87,7 @@ static inline matrix diag(const vector &v)
  *         -1, if there is no vertex with distance to O greater or equal to
  *         distance to p_prime.
  */
-static int find_pivot(const matrix &AD, const vector &p_prime)
+static int find_pivot(const matrix &AD, const vector &p_prime, ::std::ostream *o)
 {
 	double norm_diff = 0;
 	int index = -1;
@@ -93,8 +95,8 @@ static int find_pivot(const matrix &AD, const vector &p_prime)
 		const vector &candidate = column(AD, i);
 		const double diff =
 		    norm_2(candidate - p_prime) - norm_2(candidate);
-		::std::cout << "pivot candidate: " << candidate << "(" << diff
-		            << ")" << ::std::endl;
+		*o << "pivot candidate: " << candidate << "(" << diff << ")"
+		   << ::std::endl;
 		if (diff >= norm_diff) {
 			norm_diff = diff;
 			index = i;
@@ -128,7 +130,7 @@ static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
  * This function assumes that @p f is monotonic between bounds and min.
  */
 template<typename T>
-num_type find_minimum(const T& f, num_type low, num_type high)
+num_type find_minimum(const T& f, num_type low, num_type high, ::std::ostream *o)
 {
 	while (1) {
 		assert(high >= low);
@@ -136,11 +138,11 @@ num_type find_minimum(const T& f, num_type low, num_type high)
 			return f(low) < f(high) ? low : high;
 		// Or some other nice value
 		const num_type slice = (high - low) / 4;
-#if 0
-		::std::cout << "Finding minimum (slice = " << slice << ") in ("
-		            << low << ", " << high << "): (" << f(low) << ", "
-		            << f(high) << ")\n";
-#endif
+
+		*o << "Finding minimum (slice = " << slice << ") in ("
+		   << low << ", " << high << "): (" << f(low) << ", "
+		   << f(high) << ")\n";
+
 		num_type prev_res = f(low);
 		num_type it = low + slice;
 		while (prev_res > f(it) && it < high) {
@@ -170,6 +172,9 @@ num_type find_minimum(const T& f, num_type low, num_type high)
 	}
 }
 
+#define IT_DEFAULT 12000
+#define VERBOSE_DEFAULT 1
+
 int main(int argc, const char *argv[])
 {
 	boost_opt::options_description desc(
@@ -177,9 +182,11 @@ int main(int argc, const char *argv[])
 	desc.add_options()
 		("help,h", "This help message")
 		("iterations,i", boost_opt::value<unsigned>(),
-		 "Limit number of iterations (in 1000s). Default is 12.")
+		 "Limit number of iterations (in 1000s). Default is "
+		 BOOST_PP_STRINGIZE(IT_DEFAULT) ".")
 		("verbose,v", boost_opt::value<unsigned>(),
-		 "Set verbosity level. Default is 1.");
+		 "Set verbosity level. Default is "
+		 BOOST_PP_STRINGIZE(VERBOSE_DEFAULT) ".");
 
 	boost_opt::variables_map vm;
 	boost_opt::store(boost_opt::parse_command_line(argc, argv, desc), vm);
@@ -214,53 +221,65 @@ int main(int argc, const char *argv[])
 		::std::cout << points[i] << ::std::endl;
 		column(A, i) = points[i];
 	}
-	::std::cout << "A: " << A << ::std::endl;
 
-	static const num_type n = points.size();
-	static const scalar_vector e_over_n(n, 1.0 / n);
+	const unsigned it_limit = vm.count("iterations") ?
+	                    vm["iterations"].as<unsigned>() * 1000 : IT_DEFAULT;
+
+	boost::iostreams::stream< boost::iostreams::null_sink >
+		nulls( ( boost::iostreams::null_sink() ) );
+
+	const unsigned output_level =
+	  vm.count("verbose") ? vm["verbose"].as<unsigned>() : VERBOSE_DEFAULT;
+
+	::std::ostream *info  = output_level >= 1 ? &std::cout : &nulls;
+	::std::ostream *debug = output_level >= 2 ? &std::cout : &nulls;
+	::std::ostream *trace = output_level >= 3 ? &std::cout : &nulls;
+
+
+	*info << "A: " << A << ::std::endl;
+	vector p_prime;
+
+	const num_type n = points.size();
+	const scalar_vector e_over_n(n, 1.0 / n);
 	vector d = e_over_n;
+
 	unsigned it = 0;
-	unsigned it_limit = vm.count("iterations") ?
-	                    vm["iterations"].as<unsigned>() * 1000 : 12000;
-
-
-	/* Keep limit as safeguard */
 	while (it < it_limit) {
-		::std::cout << "\nIteration: " << it++ << ::std::endl;
+		*info << "\nIteration: " << it++ << ::std::endl;
 		/* Step 1 compute D, and p'.
 		 * Test if p' is close enough to origin.
 		 */
 		matrix D = diag(d) * n;
 		matrix AD = prod(A,  D);
-		vector p_prime = prod(AD, e_over_n);
+		p_prime = prod(AD, e_over_n);
 
-		::std::cout << "d: " << d << ::std::endl;
-		::std::cout << "D: " << D << ::std::endl;
-		::std::cout << "AD: " << AD << ::std::endl;
-		::std::cout << "p': " << p_prime << ::std::endl;
+		*info << "d: " << d << ::std::endl;
+		*info << "D: " << D << ::std::endl;
+		*info << "AD: " << AD << ::std::endl;
+		*info << "p': " << p_prime << ::std::endl;
 		if (is_zero(p_prime)) {
-			::std::cout << "Origin IS in the convex hull!\n";
+			::std::cout << "\nOrigin IS in the convex hull!\n";
 			return 0;
 		}
-		::std::cout << "p' distance form O: " << norm_2(p_prime)
-		            << ::std::endl;
+		*info << "p' distance form O: " << norm_2(p_prime)
+		     << ::std::endl;
 
 		/* Step 1.5: Find pivot (vertex closer to origin than p') */
-		const int pivot_index = find_pivot(AD, p_prime);
+		const int pivot_index = find_pivot(AD, p_prime, trace);
 		if (pivot_index == -1) {
-			::std::cout << "Origin IS NOT in the convex hull!\n";
+			::std::cout << "\nOrigin IS NOT in the convex hull!\n";
 			return 1;
 		}
 		vector pivot = column(AD, pivot_index);
-		::std::cout << "pivot(" << pivot_index << "): " << pivot
-		            << ::std::endl;
+		*info << "pivot(" << pivot_index << "): " << pivot
+		     << ::std::endl;
 
 		/* Step 2: create distance function. */
 		const vector u = unit_vector(n, pivot_index) - e_over_n;
 		auto y = [&](num_type a){ return e_over_n + (u * a); };
 
-		::std::cout << "y(0): " << y(0) << ::std::endl;
-		::std::cout << "y(1): " << y(1) << ::std::endl;
+		*debug << "y(0): " << y(0) << ::std::endl;
+		*debug << "y(1): " << y(1) << ::std::endl;
 
 		auto f = [&](num_type a) -> vector {
 			return prod(D, y(a)) /
@@ -272,25 +291,32 @@ int main(int argc, const char *argv[])
 		};
 
 		/* Step 2.5: find closest point. */
-		num_type a = find_minimum(f_norm_sq, 0.0, 1.0);
-		::std::cout << "Found a*: " << a << ::std::endl;
-		::std::cout << "Norm at a*: " << f_norm_sq(a) << ::std::endl;
+		num_type a = find_minimum(f_norm_sq, 0.0, 1.0, trace);
+		*info << "Found a*: " << a << ::std::endl;
+		*info << "Norm at a*: " << f_norm_sq(a) << ::std::endl;
 
 		/* Step 3: set new d */
-		::std::cout << "d': " << f(a) << ::std::endl;
+		*info << "d': " << f(a) << ::std::endl;
+		*debug << "y(a): " << y(a) << ::std::endl;
+		*debug << "Dy(a): " << prod(D,y(a)) << ::std::endl;
+		*debug << "eTDy(a): "
+		       << multi_prod(scalar_vector(n, 1), D, y(a))
+		       << ::std::endl;
+		*debug << "f(a): "
+		       << prod(D,y(a))/multi_prod(scalar_vector(n, 1), D, y(a))
+		       << ::std::endl;
 		if (is_zero(vector(d - f(a)))) {
-			::std::cout << "Can't get new point, exiting\n";
-			::std::cout << "We should be close enough to say "
-			            << "that origin IS in the convex hull\n";
-			break;
+			::std::cout << "\nCan't get new point, exiting\n"
+			            << "We should be close enough to say "
+			            << "that origin IS in the convex hull\n"
+			            << "p' distance form O: " << norm_2(p_prime)
+			            << ::std::endl;
+			return 0;
 		}
 		d = f(a);
-#if 0
-		::std::cout << "y(a): " << y(a) << ::std::endl;
-		::std::cout << "Dy(a): " << prod(D,y(a)) << ::std::endl;
-		::std::cout << "eTDy(a): " << multi_prod(scalar_vector(n, 1), D, y(a)) << ::std::endl;
-		::std::cout << "f(a): " << prod(D,y(a))/multi_prod(scalar_vector(n, 1), D, y(a)) << ::std::endl;
-#endif
 	}
+	::std::cout << "\nReached iteration limit (" << it_limit << ")\n"
+		    << "p' distance form O: " << norm_2(p_prime)
+		    << ::std::endl;
 	return 0;
 }
