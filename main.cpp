@@ -127,7 +127,7 @@ num_type find_minimum(const T& f, num_type low, num_type high)
 		if (::std::nextafter(low, DBL_MAX) >= high)
 			return f(low) < f(high) ? low : high;
 		// Or some other nice value
-		const num_type slice = (high - low) / 10;
+		const num_type slice = (high - low) / 4;
 #if 0
 		::std::cout << "Finding minimum (slice = " << slice << ") in ("
 		            << low << ", " << high << "): (" << f(low) << ", "
