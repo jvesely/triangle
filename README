@@ -11,6 +11,12 @@ See test folder for examples.
 Example invocation:
 ./triangle < test/square
 
+The program supports 2 cmdline options:
+"verbosity" Possible values 0,1,2,3. Limits or increases level of program output
+0 means that only input and result is printed
+
+"iterations" sets limit to number of iterations should be smaller than 2^32 -1
+
 
 Compiling:
 Makefile is included with standard targets (all, clean).
