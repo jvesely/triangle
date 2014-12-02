@@ -31,7 +31,7 @@ MAKEDEPEND=g++
 CXX = g++
 CPPFLAGS = -I. -std=c++11 -D __STDC_FORMAT_MACROS
 CXXFLAGS = -O3 -Wall -Wextra -fmax-errors=3
-LDFLAGS =
+LDFLAGS  = -lboost_program_options
 
 ifeq ($(DEBUG), TRUE)
 	CXXFLAGS += -g

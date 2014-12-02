@@ -37,6 +37,14 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
+#include <boost/program_options/option.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
+
+namespace boost_opt = boost::program_options;
+
+
 using num_type = double;
 using vector = typename ::boost::numeric::ublas::vector<num_type>;
 using scalar_vector = typename ::boost::numeric::ublas::scalar_vector<num_type>;
@@ -162,8 +170,26 @@ num_type find_minimum(const T& f, num_type low, num_type high)
 	}
 }
 
-int main(void)
+int main(int argc, const char *argv[])
 {
+	boost_opt::options_description desc(
+		"Triangle algorithm implementation\n");
+	desc.add_options()
+		("help,h", "This help message")
+		("iterations,i", boost_opt::value<unsigned>(),
+		 "Limit number of iterations (in 1000s). Default is 12.")
+		("verbose,v", boost_opt::value<unsigned>(),
+		 "Set verbosity level. Default is 1.");
+
+	boost_opt::variables_map vm;
+	boost_opt::store(boost_opt::parse_command_line(argc, argv, desc), vm);
+	boost_opt::notify(vm);
+
+	if (vm.count("help")) {
+		::std::cerr << desc << "\n";
+		return 1;
+	}
+
 	unsigned dims = 0;
 	::std::cin >> dims;
 
@@ -194,9 +220,12 @@ int main(void)
 	static const scalar_vector e_over_n(n, 1.0 / n);
 	vector d = e_over_n;
 	unsigned it = 0;
+	unsigned it_limit = vm.count("iterations") ?
+	                    vm["iterations"].as<unsigned>() * 1000 : 12000;
+
 
 	/* Keep limit as safeguard */
-	while (it < 1200) {
+	while (it < it_limit) {
 		::std::cout << "\nIteration: " << it++ << ::std::endl;
 		/* Step 1 compute D, and p'.
 		 * Test if p' is close enough to origin.
