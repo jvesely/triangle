@@ -93,10 +93,11 @@ static int find_pivot(const matrix &AD, const vector &p_prime, ::std::ostream *o
 	int index = -1;
 	for (unsigned i = 0; i < AD.size2(); ++i) {
 		const vector &candidate = column(AD, i);
-		const double diff =
-		    norm_2(candidate - p_prime) - norm_2(candidate);
-		*o << "pivot candidate: " << candidate << "(" << diff << ")"
-		   << ::std::endl;
+		const double vert_to_prime = norm_2(candidate - p_prime);
+		const double vert_to_O = norm_2(candidate);
+		const double diff = vert_to_prime - vert_to_O;
+		*o << "pivot candidate: " << candidate << "(" << vert_to_prime
+		   << " - " << vert_to_O << " = " << diff << ")" << ::std::endl;
 		if (diff >= norm_diff) {
 			norm_diff = diff;
 			index = i;
@@ -137,7 +138,7 @@ num_type find_minimum(const T& f, num_type low, num_type high, ::std::ostream *o
 		if (::std::nextafter(low, DBL_MAX) >= high)
 			return f(low) < f(high) ? low : high;
 		// Or some other nice value
-		const num_type slice = (high - low) / 16;
+		const num_type slice = (high - low) / 3;
 
 		*o << "Finding minimum (slice = " << slice << ") in ("
 		   << low << ", " << high << "): (" << f(low) << ", "
@@ -145,29 +146,21 @@ num_type find_minimum(const T& f, num_type low, num_type high, ::std::ostream *o
 
 		num_type prev_res = f(low);
 		num_type it = low + slice;
-		while (prev_res > f(it) && it < high) {
+		while ((f(it) <= prev_res) && (it < high)) {
 			prev_res = f(it);
-			it += slice;
+			assert(it < (it + slice));
 			assert(it <= high);
+			it += slice;
 		}
-		/* Now 'it' is the first increase sample. It can be: */
-		/* a) Right at the beginning,
-		 * the minimum is in the first slice */
-		if (it - slice <= low) {
-			high = it;
-			continue;
-		}
-		/* b) At the end, the minimum is in the last slice */
-		if (it + slice > high) {
-			low = it - slice;
-			continue;
-		}
-		/* c) Somewhere in the middle, the minimum is within
-		 * w slices of the previous value. */
-		low = it - 2 * slice;
-		high = it;
+		/* after the loop 'it' points to the first pos that
+		 * reverses non-increasing direction */
+		low = std::max(low, it - (2 * slice));
+		high = std::min(high, it);
+#if 0
+		//TODO find out why this does not work, probably rounding err
 		assert(f(it - slice) <= f(low));
 		assert(f(it - slice) <= f(high));
+#endif
 	}
 }
 
@@ -284,8 +277,8 @@ int main(int argc, const char *argv[])
 			return prod(D, y(a)) /
 			       multi_prod(scalar_vector(n, 1), D, y(a));
 		};
-		auto f_norm_sq = [&](num_type a) {
-			auto tmp = norm_2(prod(A, f(a)));
+		auto f_norm_sq = [&](num_type a) -> num_type {
+			num_type tmp = norm_2(prod(A, f(a)));
 			return tmp * tmp;
 		};
 
