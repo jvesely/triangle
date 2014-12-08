@@ -133,6 +133,10 @@ static num_type multi_prod(const vector &v, const matrix &m, const vector &u)
 template<typename T>
 num_type find_minimum(const T& f, num_type low, num_type high, ::std::ostream *o)
 {
+	/* we need an open interval */
+	low = ::std::nextafter(low, high);
+	high = ::std::nextafter(high, low);
+
 	while (1) {
 		assert(high >= low);
 		if (::std::nextafter(low, DBL_MAX) >= high)
@@ -144,13 +148,17 @@ num_type find_minimum(const T& f, num_type low, num_type high, ::std::ostream *o
 		   << low << ", " << high << "): (" << f(low) << ", "
 		   << f(high) << ")\n";
 
+		assert(slice != 0);
+
 		num_type prev_res = f(low);
 		num_type it = low + slice;
 		while ((f(it) <= prev_res) && (it < high)) {
 			prev_res = f(it);
-			assert(it < (it + slice));
 			assert(it <= high);
-			it += slice;
+			if (it < (it + slice))
+				it += slice;
+			else
+				it = ::std::nextafter(it + slice, high);
 		}
 		/* after the loop 'it' points to the first pos that
 		 * reverses non-increasing direction */
