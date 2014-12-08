@@ -81,22 +81,23 @@ static inline matrix diag(const vector &v)
 
 /** Look for vertices that are closer to O than p_prime.
  * @param AD matrix, columns are vertices.
- * @param p_prime reference point.
+ * @param ref reference point.
+ * @param o Output stream for debugging information
  * @return index of column holding the vertex with greatest distance difference
  *         >= 0
  *         -1, if there is no vertex with distance to O greater or equal to
  *         distance to p_prime.
  */
-static int find_pivot(const matrix &AD, const vector &p_prime, ::std::ostream *o)
+static int find_pivot(const matrix &AD, const vector &ref, ::std::ostream *o)
 {
 	double norm_diff = 0;
 	int index = -1;
 	for (unsigned i = 0; i < AD.size2(); ++i) {
 		const vector &candidate = column(AD, i);
-		const double vert_to_prime = norm_2(candidate - p_prime);
+		const double vert_to_ref = norm_2(candidate - ref);
 		const double vert_to_O = norm_2(candidate);
-		const double diff = vert_to_prime - vert_to_O;
-		*o << "pivot candidate: " << candidate << "(" << vert_to_prime
+		const double diff = vert_to_ref - vert_to_O;
+		*o << "pivot candidate: " << candidate << "(" << vert_to_ref
 		   << " - " << vert_to_O << " = " << diff << ")" << ::std::endl;
 		if (diff >= norm_diff) {
 			norm_diff = diff;
