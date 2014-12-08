@@ -25,3 +25,45 @@ library. This program uses C++13 features and thus requires a fairly recent
 compiler (gcc, llvm has compile options issues).
 To compile the program just type:
 make
+
+
+Algorithm implementation description:
+The program implements projective version of Triangle Algorithm. The floating
+point precision unit is chosen as epsilon. The program uses boost vector
+and matrix manipulation library to implement the algorithm in the most
+straightforward way, and amounts to less than 350 LoC.
+
+The original attempt to always set alpha to 0.5 resulted in endless loop
+for several inputs (like "tests/cube-shift"), so a minimizing function was
+be implemented.
+
+The minimizing function divides considered interval into several slices and
+recurses using the two slices with lowest border points as a new interval.
+In case it hits a constant section (due to representation limitations)
+it considers interval with highest values in order to move the new p' point
+as far possible. The recursion ends when the interval size reaches 1 ULP,
+i.e. all points in the interval are represented as either high or low boundary.
+
+The minimizing function is probably the only non-trivial part of the
+implementation.
+
+There are 4 different results the program can output:
+
+1) The program has reached iteration limit. This limit is configurable yet
+finite. The limit ensures timely  termination of the program, even if the
+progress is really slow. "tests/triangle" is an example input that gives
+this result mainly due to extremely slow progress of reducing distance to O.
+It is possible to change the iteration limit and observe how the distance
+of the final point changes.
+
+2) The program cannot move any further. This outcome is the most common for
+inputs where O is in the convex hull. Due to floating point representation
+limitations, it is possible for the point that is a convex combination of
+p' and a vertex nearest to p to be indistinguishable from p'. The observed
+values for distance from O in this case were around 10^-15.
+
+3) Origin is in the convex hull. If the program has found p' that is within
+floating point precision from p, it terminates declaring success.
+
+4) Origin is NOT in the convex hull. This is the failure terminating condition.
+If a vertex closer to O than p' cannot be found.
