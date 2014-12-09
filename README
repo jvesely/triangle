@@ -60,10 +60,28 @@ of the final point changes.
 inputs where O is in the convex hull. Due to floating point representation
 limitations, it is possible for the point that is a convex combination of
 p' and a vertex nearest to p to be indistinguishable from p'. The observed
-values for distance from O in this case were around 10^-15.
+values for distance from O in this case were around 10^-15. However, this result
+can also happen if the O is not in the convex hull, in that case the reported
+distance is a good indicator.
 
 3) Origin is in the convex hull. If the program has found p' that is within
 floating point precision from p, it terminates declaring success.
 
 4) Origin is NOT in the convex hull. This is the failure terminating condition.
 If a vertex closer to O than p' cannot be found.
+
+
+Limitations of the implementation:
+
+The strongest limitation is the floating point representation. Although 1ULP
+can be used as an epsilon in the computation the intermediate results ten to use its fractions (or powers) hitting rounding problems much sooner. This results
+in the new point not being far enough from the current iterate and program
+termination.
+
+I have done experiments with restricting the alpha range to (0.0001, 1.0),
+and although this change helped some cases that would stop on "too close"
+condition. However, such change also breaks the assumption that each iterate
+is strictly closer to O, that coupled with limitations of FP representation
+guaranteed forward progress, resulting in more cases terminating on iteration
+bound. Increasing the iteration bound by few orders of magnitude did not help
+with the issue.
