@@ -307,7 +307,7 @@ int main(int argc, const char *argv[])
 		*debug << "f(a): "
 		       << prod(D,y(a))/multi_prod(scalar_vector(n, 1), D, y(a))
 		       << ::std::endl;
-		if (is_zero(vector(d - f(a)))) {
+		if (is_zero(d - f(a))) {
 			::std::cout << "\nCan't get new point, exiting\n"
 			            << "We should be close enough to say "
 			            << "that origin IS in the convex hull\n"
