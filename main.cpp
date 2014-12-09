@@ -309,8 +309,8 @@ int main(int argc, const char *argv[])
 		       << ::std::endl;
 		if (is_zero(d - f(a))) {
 			::std::cout << "\nCan't get new point, exiting\n"
-			            << "We should be close enough to say "
-			            << "that origin IS in the convex hull\n"
+			            << "If we are close enough we can say "
+			            << "that origin is in the convex hull\n"
 			            << "p' distance form O: " << norm_2(p_prime)
 			            << ::std::endl;
 			return 0;
